@@ -1,24 +1,58 @@
-var app = angular.module('wineApp', []);
-
-console.log('Angular is working.');
-
+var app = angular.module('wineApp', ['ngRoute']);
 ////////////
 // ROUTES //
 ////////////
 
+app.config(function($routeProvider,$locationProvider){
+    $routeProvider
+        .when('/', {
+            templateUrl: "/templates/wines-index.html",
+            controller: 'WinesIndexCtrlHttp'
+        })
+        .when('/wines/:id', {
+            templateUrl: 'templates/wines-show.html',
+            controller: 'WinesShowCtrlHttp'
+        });
+    $locationProvider.html5Mode({
+        enabled: true,
+        requireBase: false
+    });
+});
 
 /////////////////
 // CONTROLLERS //
 /////////////////
 
-app.controller('WinesIndexCtrl',function($scope){
-  console.log("Wine Index")
-})
+app.controller('WinesIndexCtrl',function($scope, WineService){
+  $scope.all = WineService.query();
+});
 
-app.controller('WinesShowCtrl',function($scope){
-  console.log("Wine Show")
-})
+app.controller('WinesShowCtrl',function($scope, WineService, $routeParams){
+  $scope.showWine = WineService.get($routeParams.id);
+});
 
+app.controller('WinesIndexCtrlHttp',function($scope, $http) {
+    this.$inject = ["$http"];
+    function getAllWine() {
+        $http.get('http://daretoexplore.herokuapp.com/wines/')
+            .then(function(response) {
+                $scope.all = response.data;
+            });
+    }
+    getAllWine();
+});
+
+app.controller('WinesShowCtrlHttp',function($scope,$http,$routeParams) {
+    this.$inject=["$http"];
+    function getWine(id) {
+        $http.get('http://daretoexplore.herokuapp.com/wines/'+id)
+            .then(function(response) {
+                $scope.showWine = response.data;
+            });
+    }
+    var wineID = $routeParams.id;
+    getWine(wineID);
+});
 ////////////
 // MODELS //
 ////////////
@@ -29,29 +63,18 @@ app.factory('WineService', function(){
 
   WineService.query = function(){
     return ALL_WINES;
-  }
+  };
 
   WineService.get = function(id){
     var id = parseInt(id);
     return ALL_WINES.find(function(wine){
       return wine.id == id;
     });
-  }
+  };
 
   return WineService;
 
-})
-
-
-
-
-
-
-
-
-
-
-
+});
 /*
  * Temporary Mock JSON
  * Eventually we will retrieve this data using AJAX
